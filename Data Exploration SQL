@@ -1,0 +1,77 @@
+-- Select Data that we are going to be using 
+Select location, date, total_cases, new_cases, total_deaths, population
+from CovidDeaths 
+where continent is not null
+
+
+-- Select the number of countries listed in data 
+select count(distinct(location)) from CovidDeaths where continent is not null 
+
+
+-- Looking at Total Cases vs Total Deaths
+-- Shows the likelihood of dying if you contract Covid, Percentage of Deaths to Cases 
+Select location, max(total_cases) as TotalCases, max(total_deaths) as TotalDeaths, (max(total_deaths)/max(total_cases))*100 as DeathPercentage
+from CovidDeaths where continent is not null
+--Or to look at a specific country 
+--where location='insert country'
+group by location order by DeathPercentage DESC 
+
+
+-- Looking at Total Cases vs Population 
+-- Shows the percentage of the population that contracted Covid 
+Select location, population, max(total_cases) as TotalCases, (max(total_cases)/population)*100 as PercentPopulationInfected
+from CovidDeaths where continent is not null 
+--Or to look at a specific country 
+--where location='insert country'
+group by location, population order by PercentPopulationInfected DESC
+
+
+-- Showing Countries with Highest Death Count
+Select Location, MAX(total_deaths) as TotalDeathCount
+from CovidDeaths 
+where continent is not null
+group by location
+order by TotalDeathCount desc 
+
+
+-- Showing Continents with the Highest Death Count
+Select location, MAX(total_deaths) as TotalDeathCount
+from CovidDeaths 
+where continent is null
+group by location
+order by TotalDeathCount desc 
+
+
+-- GLOBAL NUMBERS
+-- Total Cases and Total Deaths World Wide 
+Select MAX(convert(float, total_cases)) as TotalCasesWorldwide, MAX(convert(float, total_deaths)) as TotalDeathsWorldwide, 
+(MAX(convert(float, total_deaths))/MAX(convert(float, total_cases)))*100 as DeathPercentageWorldwide
+from CovidDeaths
+where location='World'
+
+
+-- Joining Covid Deaths and Covid Vaccinations Tables
+Select * from CovidDeaths dea
+Join CovidVaccinations vac
+On dea.location = vac.location
+and dea.date = vac.date
+
+
+--Looking at Total Population Fully Vaccinated per Country
+Create View PopFullyVaccinated as
+Select location, max(people_fully_vaccinated) as PeopleFullyVaccinated from CovidVaccinations 
+where continent is not null 
+group by location 
+
+
+Select * from PopFullyVaccinated 
+order by location 
+
+
+-- Looking at Percentage of Population Fully Vaccinated
+Select pop.location, dea.population, pop.PeopleFullyVaccinated, (pop.PeopleFullyVaccinated/dea.population)*100 as PercentageOfPopVaccinated
+from PopFullyVaccinated pop
+Join CovidDeaths dea 
+on dea.location = pop.location 
+group by dea.population, pop.PeopleFullyVaccinated, pop.location
+order by PercentageOfPopVaccinated desc
